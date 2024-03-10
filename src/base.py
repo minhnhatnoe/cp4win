@@ -3,72 +3,123 @@ import subprocess
 import logging
 import cgi
 from pathlib import Path
-import requests
+
+temp_dir = Path.cwd() / "temp"
+build_dir = Path.cwd() / "build"
+packages_dir = Path.cwd() / "packages"
 
 
-def purge_dir(directory: Path):
-    if directory.exists():
-        logging.info(f"Purging {directory}")
-        shutil.rmtree(directory)
+def purge_dir(dir: Path):
+    if dir.exists():
+        logging.info(f"Purging {dir}")
+        shutil.rmtree(dir)
 
-    logging.info(f"Creating {directory}")
-    directory.mkdir()
+    logging.info(f"Creating {dir}")
+    dir.mkdir()
+
+
+def unzip_dir(fname: Path, dir: Path):
+    logging.info(f"Unzipping {fname} to {dir}")
+    assert fname.suffix == ".zip"
+    shutil.unpack_archive(fname, dir)
+
+
+def download_file(url: str, dir: Path) -> Path:
+    import requests
+    logging.info(f"Downloading {url} to {dir}")
+    r = requests.get(url, stream=True)
+    r.raise_for_status()
+
+    flabel: str
+    if "Content-Disposition" in r.headers:
+        _, params = cgi.parse_header(r.headers["Content-Disposition"])
+        flabel = params["filename"]
+    else:
+        flabel = r.url.split("/")[-1]
+
+    fname = dir / flabel
+    with open(fname, "wb") as f:
+        f.write(r.content)
+
+    return fname
+
+
+def sevenz_replace_zip(fname: Path) -> Path:
+    """Python libraries do not support BCJ2."""
+    logging.info(f"Replacing {fname} with zip")
+    assert fname.suffix == ".7z"
+
+    unzip_dir = temp_dir / fname.stem
+    assert not unzip_dir.exists()
+
+    subprocess.run(["7z", "x", fname, f"-o{unzip_dir}"], check=True,
+                   stdin=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    shutil.make_archive(fname.parent /
+                        fname.stem, "zip", unzip_dir)
+
+    fname.unlink()
+    return fname.with_suffix(".zip")
 
 
 class BaseComponent:
     name: str
-    description: str
-    resource_url: str
-    distribution_name: str
+    distribution_name: str = ""
+    resource_urls: list[str]
+
+    build_dir: Path
+    packages_dir: Path
 
     def __init__(self):
-        self.packages_dir = Path.cwd() / "packages" / self.name
-        self.build_dir = Path.cwd() / "build" / self.name
-        self.temp_dir = Path.cwd() / "temp" / self.name
-    
-    def _post_init(self):
-        self.distribution_name = self.resource_url.split("/")[-1].split("?")[0]
-        self.resource_file = self.packages_dir / self.distribution_name
+        self.build_dir = build_dir / self.name
+        self.packages_dir = packages_dir / self.name
 
-    def _7z_replace_zip(self, resource_file: Path):
-        """Python libraries do not support BCJ2."""
-        unzip_dir = self.temp_dir / resource_file.stem
-        
-        subprocess.run(["7z", "x", resource_file, f"-o{unzip_dir}"], check=True,
-                       stdin=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        shutil.make_archive(resource_file.parent / resource_file.stem, "zip", unzip_dir)
-        resource_file.unlink()
-
-    def prepare(self):
-        """Download and the component."""
-        purge_dir(self.packages_dir)
+    def prepare(self, purge: bool = True):
+        """Download components."""
         logging.info(f"Preparing {self.distribution_name}")
 
-        if isinstance(self.resource_url, str):
-            with open(self.resource_file, "wb") as f:
-                r = requests.get(self.resource_url, stream=True)
-                r.raise_for_status()
-                f.write(r.content)
+        if purge:
+            purge_dir(self.packages_dir)
 
-            if self.resource_file.suffix == ".7z":
-                self._7z_replace_zip(self.resource_file)
-                self.resource_file = self.resource_file.with_suffix(".zip")
-        else:
-            for resource in self.resource_url:
-                r = requests.get(resource, stream=True)
-                r.raise_for_status()
-                _, params = cgi.parse_header(r.headers["Content-Disposition"])
-                with open(self.packages_dir / params["filename"], "wb") as f:
-                    f.write(r.content)
-
-    def _unzip_build(self, resource_file: Path):
-        logging.info(f"Unzipping {resource_file} to {self.build_dir}")
-        shutil.unpack_archive(resource_file, self.build_dir)
+        for url in self.resource_urls:
+            fdir = download_file(url, self.packages_dir)
+            if fdir.suffix == ".7z":
+                sevenz_replace_zip(fdir)
 
     def install(self):
         """Install the component."""
         purge_dir(self.build_dir)
         logging.info(f"Installing {self.name}")
 
-        if isinstance(self.resource_url, str) and self.resource_file.suffix == ".zip":
-            self._unzip_build(self.resource_file)
+    def _run(self, *args, **kwargs):
+        logging.info(f"Running {args} for {self.name}")
+        subprocess.run(args, check=True, stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL, **kwargs)
+
+    def _mkdir(self, p: Path):
+        logging.info(f"Creating {p} for {self.name}")
+        p.mkdir(parents=True)
+
+
+class SingleComponent(BaseComponent):
+    """Component distributed as single file."""
+
+    def __init__(self, url: str):
+        super().__init__()
+        self.distribution_name = url.split("/")[-1].split("?")[0]
+        self.resource_urls = [url]
+
+    def install(self, relax_single_check: bool = False):
+        """Install the component."""
+        super().install()
+        assert relax_single_check or len([*self.packages_dir.iterdir()]) == 1
+
+
+class ZipComponent(SingleComponent):
+    """Component distributed as single zip file."""
+
+    def install(self):
+        """Install the component."""
+        super().install()
+
+        f = self.packages_dir.iterdir().__next__()
+        unzip_dir(f, self.build_dir)

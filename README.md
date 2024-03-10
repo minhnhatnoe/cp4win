@@ -48,3 +48,18 @@ gurobi and friends
 ### Misc
 
 geogebra
+
+# Use for testing and quick deployment
+vscode_ext_urls = {
+    "python": [
+        "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/ms-python/vsextensions/python/2024.3.10681011/vspackage",
+        "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/ms-python/vsextensions/debugpy/2024.3.10661804/vspackage?targetPlatform=win32-x64",
+        "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/ms-python/vsextensions/vscode-pylance/2024.2.106/vspackage"
+    ],
+    "cpp": [
+        "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/ms-vscode/vsextensions/cpptools/1.19.6/vspackage?targetPlatform=win32-x64",
+        "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/ms-vscode/vsextensions/cpptools-themes/2.0.0/vspackage"
+    ],
+    "cph": ["https://marketplace.visualstudio.com/_apis/public/gallery/publishers/DivyanshuAgrawal/vsextensions/competitive-programming-helper/6.1.0/vspackage"],
+    "runner": ["https://marketplace.visualstudio.com/_apis/public/gallery/publishers/formulahendry/vsextensions/code-runner/0.12.1/vspackage"]
+}

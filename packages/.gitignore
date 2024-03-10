@@ -1,2 +1,5 @@
-*
-!.gitignore
+*.exe
+*.zip
+*.vsix
+*.msi
+*.whl

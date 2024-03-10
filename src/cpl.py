@@ -1,7 +1,6 @@
 import subprocess
 import logging
-
-from .base import BaseComponent
+from .base import SingleComponent, ZipComponent
 
 # URL from https://sourceforge.net/projects/mingw-w64/files/ and https://winlibs.com/
 gcc_urls = {
@@ -11,14 +10,10 @@ gcc_urls = {
 }
 
 
-class GCC(BaseComponent):
-    description = "GNU Compiler Collection (GCC)"
-
+class GCC(ZipComponent):
     def __init__(self, version: str):
         self.name = f"gcc-{version}"
-        super().__init__()
-        self.resource_url = gcc_urls[version]
-        super()._post_init()
+        super().__init__(gcc_urls[version])
 
 
 # URL from https://sourceforge.net/projects/mingw-w64/files/ and https://winlibs.com/
@@ -27,22 +22,29 @@ py_urls = {
 }
 
 
-class Python(BaseComponent):
-    description = "Python Interpreter"
-
+class Python(SingleComponent):
     def __init__(self, version: str):
         self.name = f"python-{version}"
-        super().__init__()
-        self.resource_url = py_urls[version]
-        super()._post_init()
+        self.version = version
+        super().__init__(py_urls[version])
 
     def prepare(self):
         super().prepare()
-        logging.info(f"Running layout for {self.name}")
-        subprocess.run([self.resource_file, "/layout", "/quiet"], check=True)
+        installer = self.packages_dir.iterdir().__next__()
+        self._run(installer, "/layout", "/quiet")
 
     def install(self):
-        super().install()
-        logging.info(f"Running installer for {self.name}")
-        subprocess.run([self.resource_file, "/passive", "/quiet",
-                        f"TargetDir={self.build_dir}", "CompileAll=1", "AppendPath=1", "Include_debug=1", "Include_symbols=1"], check=True)
+        super().install(relax_single_check=True)
+        installer = [name for name in self.packages_dir.iterdir() if name.suffix != ".msi"]
+        assert len(installer) == 1
+        installer = installer[0]
+
+        try:
+            # Will terminate gracefully if Python is not installed
+            self._run(installer, "/uninstall", "/quiet")
+        except subprocess.CalledProcessError as e:
+            logging.warning(f"Failed to uninstall existing Python. Check if current Python is corrupted?")
+            raise e
+
+        self._run(installer, "/passive", "/quiet", f"TargetDir={self.build_dir}",
+                  "CompileAll=1", "AppendPath=1", "Include_debug=1", "Include_symbols=1")

@@ -1,13 +1,14 @@
-from src import ide, cpl
-base = [ide.DevCpp()]
-
-# for cls in base:
-#     cls.install()
+from src import ide, cpl, misc
 
 vscode = ide.VSCode()
-vscode.install()
+ides = [ide.DevCpp(), ide.CodeBlocks(), ide.Sublime(), vscode]
+exts = [ide.VSCodeExt(vscode)]
+cpls = [cpl.GCC("13.2.0"), cpl.GCC("11.2.0"), cpl.GCC("8.1.0"), cpl.Python("3.12.2")]
+miscs = [misc.GGB()]
 
-add_ons = [ide.VSCodeExt("python", vscode)]
+a = cpl.Python("3.12.2")
+a.install()
 
-for cls in add_ons:
-    cls.install()
+s = misc.Gurobi(a)
+s.prepare()
+s.install()
