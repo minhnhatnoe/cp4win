@@ -26,26 +26,21 @@ cp4win recommends installing all of the following C++ compilers for competitive 
     - Standard GCC of Codeforces, the #1 competitive programming platform. Switched to UCRT because of deficiencies in MSVCRT. See [here](https://codeforces.com/blog/entry/126677) and [here (warning: language)](https://web.archive.org/web/20220702095817/https://erikmcclure.com/blog/windows-malloc-implementation-is-a-trash-fire/).
 3. SourceForge GCC 8.1.0, POSIX, seh
     - Commonly used version of GCC. Runs fast on most machines, in contrary to newer versions.
+    - MSVCRT to support Windows versions older than 10.
 
 ### Python interpreters
 
-Anaconda, Python 3.11
+Python 3.11
 
 ### Python packages
 
 gurobi and friends
 
-### GCC packages
-
-asan
-
 ### VSCode extensions
 
 cphelper
-python
+pylance, python debugger, python
 c++, c++ theme
-python debugger
-pylance
 code runner
 
 ### Sublime Text build system
