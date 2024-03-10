@@ -11,8 +11,9 @@ gcc_urls = {
 
 
 class GCC(ZipComponent):
-    def __init__(self, version: str):
+    def __init__(self, version: str, add_path: bool = False):
         self.name = f"gcc-{version}"
+        self.add_path = add_path
         super().__init__(gcc_urls[version])
 
 

@@ -7,9 +7,11 @@ vscode_url = "https://code.visualstudio.com/sha/download?build=stable&os=win32-x
 
 class VSCode(ZipComponent):
     name = "vscode"
+    add_path = True
 
     def __init__(self):
         super().__init__(vscode_url)
+        self.shortcut = (self.build_dir / "Code.exe", "Visual Studio Code")
 
     def install(self):
         super().install()
@@ -52,6 +54,7 @@ class Sublime(ZipComponent):
 
     def __init__(self):
         super().__init__(sublime_url)
+        self.shortcut = (self.build_dir / "sublime_text.exe", "Sublime Text 4")
 
 
 codeblocks_url = "https://zenlayer.dl.sourceforge.net/project/codeblocks/Binaries/20.03/Windows/codeblocks-20.03mingw-nosetup.zip"
@@ -62,6 +65,7 @@ class CodeBlocks(ZipComponent):
 
     def __init__(self):
         super().__init__(codeblocks_url)
+        self.shortcut = (self.build_dir / "codeblocks.exe", "Code::Blocks")
 
 
 devcpp_url = "https://nchc.dl.sourceforge.net/project/dev-cpp/Binaries/Dev-C%2B%2B%204.9.9.2/devcpp-4.9.9.2_setup.exe"
@@ -72,6 +76,7 @@ class DevCpp(SingleComponent):
 
     def __init__(self):
         super().__init__(devcpp_url)
+        self.shortcut = (self.build_dir / "devcpp.exe", "Dev-C++")
 
     def install(self):
         super().install()

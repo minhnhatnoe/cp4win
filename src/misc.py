@@ -31,19 +31,21 @@ class Gurobi(BaseComponent):
         super().__init__()
 
     def prepare(self):
-        lic = [name for name in self.packages_dir.iterdir()
-               if name.name == "gurobi.lic"]
-        assert len(lic) == 1
-        lic = lic[0]
+        tmp_filename = [name for name in self.packages_dir.iterdir()
+               if name.name in ["gurobi.lic", "mip1.py"]]
+        assert len(tmp_filename) == 2
 
-        with open(lic, "r") as f:
-            lic_content = f.read()
+        tmp_file = []
+        for filename in tmp_filename:
+            with open(filename, "rb") as f:
+                tmp_file.append((filename, f.read()))
 
         try:
             super().prepare()
         finally:
-            with open(lic, "w") as f:
-                f.write(lic_content)
+            for filename, content in tmp_file:
+                with open(filename, "wb") as lic_file:
+                    lic_file.write(content)
 
         import sys
         host_python = sys.executable
@@ -63,3 +65,4 @@ class Gurobi(BaseComponent):
         self._run(self.python.build_dir / "python.exe",
                   "-m", "pip", "install", *pkgs)
         self._copy(lic, Path("C:\gurobi\gurobi.lic"))
+        self._copy_desktop(self.packages_dir / "mip1.py")

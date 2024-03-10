@@ -1,14 +1,24 @@
-from src import ide, cpl, misc
+from src import cpl, ide, misc
 
 vscode = ide.VSCode()
-ides = [ide.DevCpp(), ide.CodeBlocks(), ide.Sublime(), vscode]
-exts = [ide.VSCodeExt(vscode)]
-cpls = [cpl.GCC("13.2.0"), cpl.GCC("11.2.0"), cpl.GCC("8.1.0"), cpl.Python("3.12.2")]
-miscs = [misc.GGB()]
+python = cpl.Python("3.12.2")
 
-a = cpl.Python("3.12.2")
-a.install()
+everything = [
+    # vscode,
+    # ide.VSCodeExt(vscode),
+    # ide.DevCpp(),
+    # ide.Sublime(),
+    ide.CodeBlocks(),
 
-s = misc.Gurobi(a)
-s.prepare()
-s.install()
+    # cpl.GCC("13.2.0"),
+    # cpl.GCC("11.2.0", add_path=True),
+    # cpl.GCC("8.1.0"),
+    # python,
+
+    # misc.GGB(),
+    misc.Gurobi(python),
+]
+
+for component in everything:
+    # component.prepare()
+    component.install()

@@ -3,6 +3,7 @@ import subprocess
 import logging
 import cgi
 from pathlib import Path
+from .pwsh_helpers import pwsh
 
 temp_dir = Path.cwd() / "temp"
 build_dir = Path.cwd() / "build"
@@ -27,7 +28,8 @@ def unzip_dir(fname: Path, dir: Path):
 def download_file(url: str, dir: Path) -> Path:
     import requests
     logging.info(f"Downloading {url} to {dir}")
-    r = requests.get(url, stream=True)
+
+    r = requests.head(url, allow_redirects=True)
     r.raise_for_status()
 
     flabel: str
@@ -38,8 +40,12 @@ def download_file(url: str, dir: Path) -> Path:
         flabel = r.url.split("/")[-1]
 
     fname = dir / flabel
-    with open(fname, "wb") as f:
-        f.write(r.content)
+    logging.info(f"Resolved {url} to filename {fname}")
+
+    from pypdl import Downloader
+    dl = Downloader()
+    dl.start(url, fname, 32, retries=2)
+    assert not dl.failed
 
     return fname
 
@@ -69,6 +75,9 @@ class BaseComponent:
     build_dir: Path
     packages_dir: Path
 
+    add_path: bool = False
+    shortcut: tuple[Path, str] | None = None
+
     def __init__(self):
         self.build_dir = build_dir / self.name
         self.packages_dir = packages_dir / self.name
@@ -90,6 +99,11 @@ class BaseComponent:
         purge_dir(self.build_dir)
         logging.info(f"Installing {self.name}")
 
+        if self.add_path:
+            pwsh.add_path(self.build_dir / "bin")
+        if self.shortcut is not None:
+            pwsh.add_shortcut(self.shortcut[0], self.shortcut[1])
+
     def _run(self, *args, **kwargs):
         logging.info(f"Running {args} for {self.name}")
         subprocess.run(args, check=True, stdout=subprocess.DEVNULL,
@@ -103,6 +117,9 @@ class BaseComponent:
         logging.info(f"Copying {f} to {t} for {self.name}")
         t.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(f, t)
+    
+    def _copy_desktop(self, name: str):
+        pwsh.copy_desktop(name)
 
 
 class SingleComponent(BaseComponent):
