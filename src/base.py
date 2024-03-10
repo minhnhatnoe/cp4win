@@ -102,7 +102,7 @@ class BaseComponent:
         if self.add_path:
             pwsh.add_path(self.build_dir / "bin")
         if self.shortcut is not None:
-            pwsh.add_shortcut(self.shortcut[0], self.shortcut[1])
+            pwsh.create_shortcut(self.shortcut[0], self.shortcut[1])
 
     def _run(self, *args, **kwargs):
         logging.info(f"Running {args} for {self.name}")
