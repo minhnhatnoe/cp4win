@@ -34,8 +34,8 @@ class Python(SingleComponent):
         self._run(installer, "/layout", "/quiet")
 
     def install(self):
-        super().install(relax_single_check=True)
-        installer = [name for name in self.packages_dir.iterdir() if name.suffix != ".msi"]
+        installer = [name for name in self.packages_dir.iterdir()
+                     if name.suffix != ".msi"]
         assert len(installer) == 1
         installer = installer[0]
 
@@ -43,8 +43,10 @@ class Python(SingleComponent):
             # Will terminate gracefully if Python is not installed
             self._run(installer, "/uninstall", "/quiet")
         except subprocess.CalledProcessError as e:
-            logging.warning(f"Failed to uninstall existing Python. Check if current Python is corrupted?")
+            logging.warning(
+                f"Failed to uninstall existing Python. Check if current Python is corrupted?")
             raise e
 
+        super().install(relax_single_check=True)
         self._run(installer, "/passive", "/quiet", f"TargetDir={self.build_dir}",
                   "CompileAll=1", "AppendPath=1", "Include_debug=1", "Include_symbols=1")

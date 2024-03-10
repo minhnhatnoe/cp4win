@@ -75,4 +75,5 @@ class DevCpp(SingleComponent):
 
     def install(self):
         super().install()
-        self._run(self.packages_dir.iterdir().__next__(), "/S", f"/D={self.build_dir}")
+        self._run(self.packages_dir.iterdir().__next__(),
+                  "/S", f"/D={self.build_dir}")

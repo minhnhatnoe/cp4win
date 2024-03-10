@@ -99,6 +99,11 @@ class BaseComponent:
         logging.info(f"Creating {p} for {self.name}")
         p.mkdir(parents=True)
 
+    def _copy(self, f: Path, t: Path):
+        logging.info(f"Copying {f} to {t} for {self.name}")
+        t.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(f, t)
+
 
 class SingleComponent(BaseComponent):
     """Component distributed as single file."""
