@@ -32,10 +32,6 @@ cp4win recommends installing all of the following C++ compilers for competitive 
 
 Python 3.11
 
-### Python packages
-
-gurobi and friends
-
 ### VSCode extensions
 
 cphelper
@@ -43,10 +39,12 @@ pylance, python debugger, python
 c++, c++ theme
 code runner
 
+### Python packages
+
+gurobi and friends
+
 ### Sublime Text build system
 
 ### Misc
 
 geogebra
-graph editor
-python ref
