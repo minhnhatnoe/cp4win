@@ -64,5 +64,5 @@ class Gurobi(BaseComponent):
 
         self._run(self.python.build_dir / "python.exe",
                   "-m", "pip", "install", *pkgs)
-        self._copy(lic, Path("C:\gurobi\gurobi.lic"))
+        self._copy(lic, Path("C:\\gurobi\\gurobi.lic"))
         self._copy_desktop(self.packages_dir / "mip1.py")

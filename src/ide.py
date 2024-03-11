@@ -1,5 +1,6 @@
 import logging
 from .base import BaseComponent, SingleComponent, ZipComponent
+from .cpl import GCC
 
 # URL from https://code.visualstudio.com/download
 vscode_url = "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-archive"
@@ -20,13 +21,14 @@ class VSCode(ZipComponent):
         # Ref: https://code.visualstudio.com/docs/editor/portable
         self._mkdir(self.build_dir / "data" / "tmp")
 
-
+settings_json = '{"C_Cpp.default.compilerPath": "fname"}'
 class VSCodeExt(BaseComponent):
     name = distribution_name = "vscode-extensions"
     resource_urls = []
 
-    def __init__(self, vscode: VSCode):
+    def __init__(self, vscode: VSCode, gcc: GCC):
         self.vscode = vscode
+        self.gcc = gcc
         super().__init__()
 
     def prepare(self):
@@ -43,6 +45,9 @@ class VSCodeExt(BaseComponent):
         for f in self.packages_dir.iterdir():
             if f.suffix == ".vsix":
                 self._run(code_command, "--install-extension", f)
+        
+        self._write(self.vscode.build_dir / "data" / "user-data" / "User" / "settings.json", 
+            settings_json.replace("fname", str(self.gcc.build_dir / "bin" / "g++.exe").replace("\\", "\\\\")).encode())
 
 
 # https://download.sublimetext.com/sublime_text_build_4169_x64.zip
@@ -55,6 +60,32 @@ class Sublime(ZipComponent):
     def __init__(self):
         super().__init__(sublime_url)
         self.shortcut = (self.build_dir / "sublime_text.exe", "SublimeText4")
+    
+    def prepare(self):
+        tmp_filename = [name for name in self.packages_dir.iterdir()
+               if name.suffix == ".sublime-build"]
+        assert len(tmp_filename) == 1
+
+        tmp_file = []
+        for filename in tmp_filename:
+            with open(filename, "rb") as f:
+                tmp_file.append((filename, f.read()))
+
+        try:
+            super().prepare()
+        finally:
+            for filename, content in tmp_file:
+                with open(filename, "wb") as lic_file:
+                    lic_file.write(content)
+    
+    def install(self):
+        super().install(relax_single_check=True)
+        slbuild = [name for name in self.packages_dir.iterdir()
+            if name.suffix == ".sublime-build"]
+        assert len(slbuild) == 1
+        for f in slbuild:
+            self._copy(f, self.build_dir / "Data" / "Packages" / "User" / f.name)
+
 
 
 codeblocks_url = "https://zenlayer.dl.sourceforge.net/project/codeblocks/Binaries/20.03/Windows/codeblocks-20.03mingw-nosetup.zip"
@@ -68,18 +99,12 @@ class CodeBlocks(ZipComponent):
         self.shortcut = (self.build_dir / "codeblocks.exe", "CodeBlocks")
 
 
-devcpp_url = "https://sourceforge.net/projects/orwelldevcpp/files/latest/download"
+devcpp_url = "https://zenlayer.dl.sourceforge.net/project/orwelldevcpp/Portable%20Releases/Dev-Cpp%205.11%20TDM-GCC%20x64%204.9.2%20Portable.7z"
 
 
-class DevCpp(SingleComponent):
+class DevCpp(ZipComponent):
     name = "devcpp"
 
     def __init__(self):
         super().__init__(devcpp_url)
         self.shortcut = (self.build_dir / "devcpp.exe", "DevCpp")
-
-    def install(self):
-        super().install()
-        self._run(self.packages_dir.iterdir().__next__(),
-                  "/S", f"/D={self.build_dir}")
-        self._run(self.build_dir / "devcppPortable.exe")

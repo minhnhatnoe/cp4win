@@ -26,6 +26,7 @@ def unzip_dir(fname: Path, dir: Path):
 
 
 def download_file(url: str, dir: Path) -> Path:
+    from urllib.parse import unquote
     import requests
     logging.info(f"Downloading {url} to {dir}")
 
@@ -37,14 +38,14 @@ def download_file(url: str, dir: Path) -> Path:
         _, params = cgi.parse_header(r.headers["Content-Disposition"])
         flabel = params["filename"]
     else:
-        flabel = r.url.split("/")[-1]
+        flabel = unquote(r.url.split("/")[-1])
 
     fname = dir / flabel
     logging.info(f"Resolved {url} to filename {fname}")
 
     from pypdl import Downloader
-    dl = Downloader()
-    dl.start(url, fname, 32, retries=2)
+    dl = Downloader(timeout=300)
+    dl.start(url, fname, retries=8)
     assert not dl.failed
 
     return fname
@@ -113,6 +114,12 @@ class BaseComponent:
         logging.info(f"Creating {p} for {self.name}")
         p.mkdir(parents=True)
 
+    def _write(self, p: Path, c: bytes):
+        logging.info(f"Writing {c.decode()} to {p} for {self.name}")
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with open(p, "wb") as f:
+            f.write(c)
+
     def _copy(self, f: Path, t: Path):
         logging.info(f"Copying {f} to {t} for {self.name}")
         t.parent.mkdir(parents=True, exist_ok=True)
@@ -139,9 +146,10 @@ class SingleComponent(BaseComponent):
 class ZipComponent(SingleComponent):
     """Component distributed as single zip file."""
 
-    def install(self):
+    def install(self, *args, **kwargs):
         """Install the component."""
-        super().install()
+        super().install(*args, **kwargs)
 
-        f = self.packages_dir.iterdir().__next__()
-        unzip_dir(f, self.build_dir)
+        f = [name for name in self.packages_dir.iterdir() if name.suffix == ".zip"]
+        assert len(f) == 1
+        unzip_dir(f[0], self.build_dir)
