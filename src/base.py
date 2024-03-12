@@ -39,6 +39,9 @@ def download_file(url: str, dir: Path) -> Path:
         flabel = unquote(r.url.split("/")[-1])
 
     fname = dir / flabel
+    fname = fname.with_name(fname.name.replace(" ", "_"))
+    fname.parent.mkdir(parents=True, exist_ok=True)
+
     logging.info(f"Resolved {url} to filename {fname}")
 
     from pypdl import Downloader

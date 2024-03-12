@@ -1,14 +1,13 @@
 import sys
 from src import cpl, ide, misc, distr
 
-vscode = ide.VSCode()
-python = cpl.Python("3.12.2")
 gcc = cpl.GCC("11.2.0", add_path=True)
+vscode = ide.VSCode(gcc)
+python = cpl.Python("3.12.2")
 
 everything = [
     ide.DevCpp(),
     vscode,
-    ide.VSCodeExt(vscode, gcc),
     ide.Sublime(),
     ide.CodeBlocks(),
 
@@ -24,8 +23,8 @@ everything = [
 
 match sys.argv[1]:
     case "prepare":
-        for component in everything:
-            component.prepare()
+        # for component in everything:
+        #     component.prepare()
         distr.create_distr()
         
     case "install":

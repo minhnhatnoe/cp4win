@@ -54,7 +54,8 @@ class Gurobi(BaseComponent):
         logging.info("Found mip1.py")
 
         import sys
-        host_python = sys.executable
+        host_python = Path(sys.executable)
+        self.packages_dir.mkdir(parents=True, exist_ok=True)
         self._run(host_python, "-m", "pip", "download",
                   f"--python-version={self.python.version}", "--only-binary=:all:", *gurobi_deps, cwd=self.packages_dir)
 

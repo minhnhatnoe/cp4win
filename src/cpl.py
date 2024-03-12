@@ -13,9 +13,11 @@ gcc_urls = {
 class GCC(ZipComponent):
     def __init__(self, version: str, add_path: bool = False):
         self.name = f"gcc-{version}"
-        self.add_path = add_path
-        self.gpp_dir = self.build_dir / "mingw64" / "bin" / "g++.exe"
         super().__init__(gcc_urls[version])
+
+        self.gpp_exe = self.build_dir / "mingw64" / "bin" / "g++.exe"
+        if add_path:
+            self.path = self.gpp_exe.parent
 
 
 # URL from https://sourceforge.net/projects/mingw-w64/files/ and https://winlibs.com/

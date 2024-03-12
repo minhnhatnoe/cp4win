@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 from zipfile import ZipFile
-from .base import packages_dir, temp_dir, download_file, unzip_dir
+from .base import packages_dir, assets_dir, temp_dir, download_file, unzip_dir
 
 
 def walk_dir_skip(root: Path):
@@ -44,6 +44,12 @@ def create_python_embed():
 def create_distr():
     python_embed_dir = create_python_embed()
     with ZipFile(Path.cwd() / "artefacts" / "dstr.zip", 'w') as zf:
+        # assets folder
+        logging.info("Adding /assets to the distribution")
+        for p in walk_dir_skip(assets_dir):
+            logging.info(f"Adding {p} to the distribution")
+            zf.write(p, arcname=p.relative_to(Path.cwd()))
+
         # packages folder
         logging.info("Adding /packages to the distribution")
         for p in walk_dir_skip(packages_dir):

@@ -4,6 +4,7 @@ from .cpl import GCC
 
 # URL from https://code.visualstudio.com/download
 vscode_url = "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-archive"
+settings_json = '{"C_Cpp.default.compilerPath": "fname"}'
 
 
 class VSCode(ZipComponent):
@@ -14,15 +15,17 @@ class VSCode(ZipComponent):
         self.path = self.build_dir / "bin"
         self.shortcut = (self.build_dir / "Code.exe", "VisualStudioCode")
         self.gcc = gcc
-    
+
     def prepare(self):
         super().prepare()
-        extension_list = [name for name in self.packages_dir.iterdir() if name.suffix == ".vsix"]
+        extension_list = [
+            name.name for name in self.packages_dir.iterdir() if name.suffix == ".vsix"]
 
         if len(extension_list) == 0:
             logging.warning("No extension found")
         else:
-            logging.info(f"Extensions found:\n{"\n".join(extension_list)}")
+            ext_names = '\n'.join(extension_list)
+            logging.info(f"Extensions found:\n{ext_names}")
 
     def install(self):
         super().install()
@@ -36,11 +39,8 @@ class VSCode(ZipComponent):
             if f.suffix == ".vsix":
                 self._run(code_command, "--install-extension", f)
 
-        self._write(self.vscode.build_dir / "data" / "user-data" / "User" / "settings.json",
+        self._write(self.build_dir / "data" / "user-data" / "User" / "settings.json",
                     settings_json.replace("fname", str(self.gcc.gpp_exe).replace("\\", "\\\\")).encode())
-
-
-settings_json = '{"C_Cpp.default.compilerPath": "fname"}'
 
 
 # https://download.sublimetext.com/sublime_text_build_4169_x64.zip
@@ -56,11 +56,13 @@ class Sublime(ZipComponent):
 
     def prepare(self):
         super().prepare()
-        sublime_build_list = [name for name in self.assets_dir.iterdir() if name.suffix == ".sublime-build"]
+        sublime_build_list = [name.name for name in self.assets_dir.iterdir(
+        ) if name.suffix == ".sublime-build"]
         if len(sublime_build_list) == 0:
             logging.warning("No Sublime build found")
         else:
-            logging.info(f"Sublime build found:\n{"\n".join(sublime_build_list)}")
+            build_names = '\n'.join(sublime_build_list)
+            logging.info(f"Sublime build found:\n{build_names}")
 
     def install(self):
         super().install()
