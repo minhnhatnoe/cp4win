@@ -14,6 +14,7 @@ class GCC(ZipComponent):
     def __init__(self, version: str, add_path: bool = False):
         self.name = f"gcc-{version}"
         self.add_path = add_path
+        self.gpp_dir = self.build_dir / "mingw64" / "bin" / "g++.exe"
         super().__init__(gcc_urls[version])
 
 
@@ -50,4 +51,4 @@ class Python(SingleComponent):
 
         super().install(relax_single_check=True)
         self._run(installer, "/passive", "/quiet", f"TargetDir={self.build_dir}",
-                  "CompileAll=1", "AppendPath=1", "Include_debug=1", "Include_symbols=1")
+                  "CompileAll=1", "PrependPath=1", "Include_debug=1", "Include_symbols=1")

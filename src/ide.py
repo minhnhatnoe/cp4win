@@ -8,11 +8,21 @@ vscode_url = "https://code.visualstudio.com/sha/download?build=stable&os=win32-x
 
 class VSCode(ZipComponent):
     name = "vscode"
-    add_path = True
 
-    def __init__(self):
+    def __init__(self, gcc: GCC):
         super().__init__(vscode_url)
+        self.path = self.build_dir / "bin"
         self.shortcut = (self.build_dir / "Code.exe", "VisualStudioCode")
+        self.gcc = gcc
+    
+    def prepare(self):
+        super().prepare()
+        extension_list = [name for name in self.packages_dir.iterdir() if name.suffix == ".vsix"]
+
+        if len(extension_list) == 0:
+            logging.warning("No extension found")
+        else:
+            logging.info(f"Extensions found:\n{"\n".join(extension_list)}")
 
     def install(self):
         super().install()
@@ -21,33 +31,16 @@ class VSCode(ZipComponent):
         # Ref: https://code.visualstudio.com/docs/editor/portable
         self._mkdir(self.build_dir / "data" / "tmp")
 
-settings_json = '{"C_Cpp.default.compilerPath": "fname"}'
-class VSCodeExt(BaseComponent):
-    name = distribution_name = "vscode-extensions"
-    resource_urls = []
-
-    def __init__(self, vscode: VSCode, gcc: GCC):
-        self.vscode = vscode
-        self.gcc = gcc
-        super().__init__()
-
-    def prepare(self):
-        super().prepare(False)
-        extension_list = [*self.packages_dir.iterdir()]
-        if len(extension_list) == 0:
-            logging.warning("No extension found")
-        else:
-            logging.info(f"Extensions found: {extension_list}")
-
-    def install(self):
-        super().install()
-        code_command = self.vscode.build_dir / "bin" / "code.cmd"
+        code_command = self.build_dir / "bin" / "code.cmd"
         for f in self.packages_dir.iterdir():
             if f.suffix == ".vsix":
                 self._run(code_command, "--install-extension", f)
-        
-        self._write(self.vscode.build_dir / "data" / "user-data" / "User" / "settings.json", 
-            settings_json.replace("fname", str(self.gcc.build_dir / "bin" / "g++.exe").replace("\\", "\\\\")).encode())
+
+        self._write(self.vscode.build_dir / "data" / "user-data" / "User" / "settings.json",
+                    settings_json.replace("fname", str(self.gcc.gpp_exe).replace("\\", "\\\\")).encode())
+
+
+settings_json = '{"C_Cpp.default.compilerPath": "fname"}'
 
 
 # https://download.sublimetext.com/sublime_text_build_4169_x64.zip
@@ -60,32 +53,23 @@ class Sublime(ZipComponent):
     def __init__(self):
         super().__init__(sublime_url)
         self.shortcut = (self.build_dir / "sublime_text.exe", "SublimeText4")
-    
+
     def prepare(self):
-        tmp_filename = [name for name in self.packages_dir.iterdir()
-               if name.suffix == ".sublime-build"]
-        assert len(tmp_filename) == 1
+        super().prepare()
+        sublime_build_list = [name for name in self.assets_dir.iterdir() if name.suffix == ".sublime-build"]
+        if len(sublime_build_list) == 0:
+            logging.warning("No Sublime build found")
+        else:
+            logging.info(f"Sublime build found:\n{"\n".join(sublime_build_list)}")
 
-        tmp_file = []
-        for filename in tmp_filename:
-            with open(filename, "rb") as f:
-                tmp_file.append((filename, f.read()))
-
-        try:
-            super().prepare()
-        finally:
-            for filename, content in tmp_file:
-                with open(filename, "wb") as lic_file:
-                    lic_file.write(content)
-    
     def install(self):
-        super().install(relax_single_check=True)
-        slbuild = [name for name in self.packages_dir.iterdir()
-            if name.suffix == ".sublime-build"]
-        assert len(slbuild) == 1
-        for f in slbuild:
-            self._copy(f, self.build_dir / "Data" / "Packages" / "User" / f.name)
+        super().install()
+        slbuild = [name for name in self.assets_dir.iterdir()
+                   if name.suffix == ".sublime-build"]
 
+        for f in slbuild:
+            self._copy(f, self.build_dir / "Data" /
+                       "Packages" / "User" / f.name)
 
 
 codeblocks_url = "https://zenlayer.dl.sourceforge.net/project/codeblocks/Binaries/20.03/Windows/codeblocks-20.03mingw-nosetup.zip"
@@ -107,4 +91,4 @@ class DevCpp(ZipComponent):
 
     def __init__(self):
         super().__init__(devcpp_url)
-        self.shortcut = (self.build_dir / "devcpp.exe", "DevCpp")
+        self.shortcut = (self.build_dir / "Dev-Cpp" / "devcpp.exe", "DevCpp")

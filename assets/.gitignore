@@ -1,0 +1,6 @@
+*.exe
+*.zip
+*.vsix
+*.msi
+*.whl
+gurobi.lic

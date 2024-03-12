@@ -1,2 +1,3 @@
-*
-!.gitignore
+gurobi.lic
+*.whl
+*.vsix
